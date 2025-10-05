@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 
 import certifi
 
+# BASE_URL = "https://open.larksuite.com/open-apis/bot/v2/hook/"
 BASE_URL = "https://www.feishu.cn/flow/api/trigger-webhook/"
 
 class LarkBot:
