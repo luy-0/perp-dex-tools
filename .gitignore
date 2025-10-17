@@ -3,7 +3,7 @@
 
 *.csv
 bnbenv
-
+/mydoc
 # Logs
 logs
 *.log
