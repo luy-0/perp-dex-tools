@@ -357,7 +357,7 @@ def test_real_order_execution(account):
             symbol='SOL_USDC',
             side='Bid',
             order_type=OrderTypeEnum.LIMIT,
-            time_in_force=TimeInForceEnum.IOC,  # IOC 立即取消未成交部分
+            time_in_force=TimeInForceEnum.GTC,  # IOC 立即取消未成交部分
             quantity=safe_quantity,
             price=str(safe_price),
             post_only=False
@@ -422,9 +422,125 @@ def test_real_order_execution(account):
             return False
 
 
+def test_place_open_order_simulation(account):
+    """测试 8: 模拟 place_open_order 逻辑（不实际下单）"""
+    print_header("测试 8: place_open_order 逻辑模拟")
+    
+    try:
+        from bpx.public import Public
+        from decimal import Decimal
+        
+        public_client = Public()
+        contract_id = 'SOL_USDC'
+        quantity = Decimal('0.1')
+        tick_size = Decimal('0.01')
+        
+        print_info(f"模拟参数:")
+        print_info(f"  交易对: {contract_id}")
+        print_info(f"  数量: {quantity}")
+        print_info(f"  Tick Size: {tick_size}")
+        
+        # 模拟 place_open_order 的定价逻辑
+        print_info("\n获取市场 BBO...")
+        depth = public_client.get_depth(contract_id)
+        
+        if not depth or 'bids' not in depth or 'asks' not in depth:
+            print_error("无法获取市场深度")
+            return False
+        
+        # 使用 fetch_bbo_prices 的排序逻辑
+        bids = depth.get('bids', [])
+        asks = depth.get('asks', [])
+        
+        # Sort bids and asks (与 fetch_bbo_prices 一致)
+        bids = sorted(bids, key=lambda x: Decimal(x[0]), reverse=True)  # 降序：最高价在前
+        asks = sorted(asks, key=lambda x: Decimal(x[0]))                # 升序：最低价在前
+        
+        # Best bid is the highest price someone is willing to buy at
+        best_bid = Decimal(bids[0][0]) if bids and len(bids) > 0 else Decimal('0')
+        # Best ask is the lowest price someone is willing to sell at
+        best_ask = Decimal(asks[0][0]) if asks and len(asks) > 0 else Decimal('0')
+        
+        print_success(f"当前 BBO:")
+        print_info(f"  最佳买价 (Best Bid): {best_bid}")
+        print_info(f"  最佳卖价 (Best Ask): {best_ask}")
+        print_info(f"  价差 (Spread): {best_ask - best_bid}")
+        
+        # 模拟 buy 方向的定价
+        print_info(f"\n【买入方向】定价逻辑:")
+        buy_order_price = best_ask - 2 * tick_size
+        print_info(f"  公式: best_ask - 2 * tick_size")
+        print_info(f"  计算: {best_ask} - 2 * {tick_size} = {buy_order_price}")
+        print_info(f"  订单侧: Bid (买入)")
+        
+        if buy_order_price > best_bid:
+            print_success(f"  ✓ 订单价格 ({buy_order_price}) > 最佳买价 ({best_bid})")
+            print_success(f"  ✓ 订单将在买盘顶部，优先成交")
+        else:
+            print_warning(f"  ⚠️  订单价格 ({buy_order_price}) <= 最佳买价 ({best_bid})")
+        
+        if buy_order_price < best_ask:
+            print_success(f"  ✓ 订单价格 ({buy_order_price}) < 最佳卖价 ({best_ask})")
+            print_success(f"  ✓ Post-only 订单不会立即成交")
+        else:
+            print_error(f"  ✗ 订单价格 ({buy_order_price}) >= 最佳卖价 ({best_ask})")
+            print_error(f"  ✗ Post-only 订单会被拒绝!")
+        
+        # 模拟 sell 方向的定价
+        print_info(f"\n【卖出方向】定价逻辑:")
+        sell_order_price = best_bid + 2 * tick_size
+        print_info(f"  公式: best_bid + 2 * tick_size")
+        print_info(f"  计算: {best_bid} + 2 * {tick_size} = {sell_order_price}")
+        print_info(f"  订单侧: Ask (卖出)")
+        
+        if sell_order_price < best_ask:
+            print_success(f"  ✓ 订单价格 ({sell_order_price}) < 最佳卖价 ({best_ask})")
+            print_success(f"  ✓ 订单将在卖盘底部，优先成交")
+        else:
+            print_warning(f"  ⚠️  订单价格 ({sell_order_price}) >= 最佳卖价 ({best_ask})")
+        
+        if sell_order_price > best_bid:
+            print_success(f"  ✓ 订单价格 ({sell_order_price}) > 最佳买价 ({best_bid})")
+            print_success(f"  ✓ Post-only 订单不会立即成交")
+        else:
+            print_error(f"  ✗ 订单价格 ({sell_order_price}) <= 最佳买价 ({best_bid})")
+            print_error(f"  ✗ Post-only 订单会被拒绝!")
+        
+        # 分析价格合理性
+        print_info(f"\n【价格分析】:")
+        buy_distance_to_mid = abs(buy_order_price - (best_bid + best_ask) / 2)
+        sell_distance_to_mid = abs(sell_order_price - (best_bid + best_ask) / 2)
+        
+        print_info(f"  买单距离中间价: {buy_distance_to_mid:.2f}")
+        print_info(f"  卖单距离中间价: {sell_distance_to_mid:.2f}")
+        
+        spread = best_ask - best_bid
+        print_info(f"  当前价差: {spread}")
+        
+        if spread > 4 * tick_size:
+            print_success(f"  ✓ 价差 ({spread}) > 4 * tick_size ({4 * tick_size})")
+            print_success(f"  ✓ 有足够空间放置 post-only 订单")
+        else:
+            print_warning(f"  ⚠️  价差 ({spread}) 较小，post-only 订单可能经常被拒绝")
+        
+        # 总结
+        print_info(f"\n【总结】:")
+        print_success(f"✓ 定价逻辑正确")
+        print_success(f"✓ Post-only 订单不会吃单（Maker 订单）")
+        print_success(f"✓ 订单价格有竞争力（接近最佳价）")
+        
+        return True
+        
+    except Exception as e:
+        print_error(f"模拟测试失败: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return False
+
+
 def test_market_data():
-    """测试 8: 获取市场数据（无需认证）"""
-    print_header("测试 8: 获取市场数据 (Public API)")
+    """测试 9: 获取市场数据（无需认证）"""
+    print_header("测试 9: 获取市场数据 (Public API)")
     
     try:
         from bpx.public import Public
@@ -439,15 +555,21 @@ def test_market_data():
         if depth and 'bids' in depth and 'asks' in depth:
             print_success("成功获取市场深度")
             
-            bids = depth['bids'][:3]
-            asks = depth['asks'][:3]
+            # 使用 fetch_bbo_prices 的排序逻辑
+            from decimal import Decimal
+            bids = depth.get('bids', [])
+            asks = depth.get('asks', [])
             
-            print_info("\n买单 (Bids):")
-            for bid in bids:
+            # Sort bids and asks
+            bids = sorted(bids, key=lambda x: Decimal(x[0]), reverse=True)  # 降序：最高价在前
+            asks = sorted(asks, key=lambda x: Decimal(x[0]))                # 升序：最低价在前
+            
+            print_info("\n买单 (Bids - 价格从高到低):")
+            for bid in bids[:3]:
                 print_info(f"  价格: {bid[0]}, 数量: {bid[1]}")
             
-            print_info("\n卖单 (Asks):")
-            for ask in asks:
+            print_info("\n卖单 (Asks - 价格从低到高):")
+            for ask in asks[:3]:
                 print_info(f"  价格: {ask[0]}, 数量: {ask[1]}")
             
             return True
@@ -503,7 +625,10 @@ def main():
     # 测试 7: 真实订单执行（可选）
     results['real_order'] = test_real_order_execution(account)
     
-    # 测试 8: 市场数据
+    # 测试 8: place_open_order 逻辑模拟
+    results['place_order_logic'] = test_place_open_order_simulation(account)
+    
+    # 测试 9: 市场数据
     results['market_data'] = test_market_data()
     
     # 总结

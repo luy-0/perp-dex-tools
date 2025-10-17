@@ -341,6 +341,7 @@ class BackpackClient(BaseExchangeClient):
                 order_price = best_bid - self.config.tick_size
                 side = 'Ask'
 
+            print(f"[OPEN] Order price: {order_price}, best bid: {best_bid}, best ask: {best_ask}")
             # Place the order using Backpack SDK (post-only to ensure maker order)
             order_result = self.account_client.execute_order(
                 symbol=contract_id,
