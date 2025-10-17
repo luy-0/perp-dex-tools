@@ -1,5 +1,12 @@
 # Hedge Mode Trading Bot Docker Management
-.PHONY: build run run-backpack run-extended interactive logs shell stop clean help
+.PHONY: build run run-backpack run-extended interactive logs shell stop clean help status stop-backpack stop-extended logs-backpack logs-extended
+
+# 默认目标：显示所有指令
+.DEFAULT_GOAL := list
+
+list:
+	@echo "可用的make命令:"
+	@awk -F':' '/^[a-zA-Z0-9][^$$#\t ]*:/ {split($$1,A," ");print "  - "A[1]}' $(MAKEFILE_LIST) | grep -v "^  - .PHONY" | grep -v "^  - list"
 
 # Configuration
 IMAGE_NAME := hedge-trading-bot
