@@ -26,14 +26,12 @@ RUN pip install --upgrade pip && \
 # Stage for development/runtime
 FROM base as runtime
 
-# Create logs directory
-RUN mkdir -p /app/logs
-
 # Copy application code
 COPY . .
 
-# Create a non-root user
-RUN useradd --create-home --shell /bin/bash hedge && \
+# Create a non-root user with fixed UID (1000 matches most Linux users)
+RUN useradd --create-home --shell /bin/bash --uid 1000 hedge && \
+    mkdir -p /app/logs && \
     chown -R hedge:hedge /app
 
 USER hedge

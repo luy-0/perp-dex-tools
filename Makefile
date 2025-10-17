@@ -23,6 +23,7 @@ build:
 # Run container interactively (for manual commands)
 interactive:
 	@echo "Starting interactive container..."
+	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -it --rm \
 		--name $(CONTAINER_NAME)-interactive \
 		-v $(PWD)/logs:/app/logs \
@@ -39,6 +40,7 @@ run-backpack:
 	fi
 	@echo "🚀 Starting Backpack hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
+	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-backpack \
 		-v $(PWD)/logs:/app/logs \
@@ -61,6 +63,7 @@ run-extended:
 	fi
 	@echo "🚀 Starting Extended hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
+	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-extended \
 		-v $(PWD)/logs:/app/logs \
@@ -83,6 +86,7 @@ run:
 	fi
 	@echo "🚀 Starting $(EXCHANGE) hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
+	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-$(EXCHANGE) \
 		-v $(PWD)/logs:/app/logs \
