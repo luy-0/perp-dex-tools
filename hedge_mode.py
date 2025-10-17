@@ -81,11 +81,14 @@ async def main():
     """Main entry point that creates and runs the appropriate hedge bot."""
     args = parse_arguments()
 
+    # Try to load .env file if it exists (for local development)
+    # In Docker, environment variables are injected via --env-file
     env_path = Path(args.env_file)
-    if not env_path.exists():
-        print(f"Env file not find: {env_path.resolve()}")
-        sys.exit(1)
-    dotenv.load_dotenv(args.env_file)
+    if env_path.exists():
+        dotenv.load_dotenv(args.env_file)
+    else:
+        # Running in Docker with --env-file, environment variables already loaded
+        print(f"ℹ️  No .env file found at {env_path.resolve()}, using environment variables")
     
     # Validate exchange
     validate_exchange(args.exchange)

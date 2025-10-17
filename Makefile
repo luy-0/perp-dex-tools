@@ -22,12 +22,19 @@ build:
 
 # Run container interactively (for manual commands)
 interactive:
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ Error: $(ENV_FILE) file not found!"; \
+		echo "💡 Please create .env file from env_example.txt:"; \
+		echo "   cp env_example.txt .env"; \
+		echo "   Then edit .env with your API keys"; \
+		exit 1; \
+	fi
 	@echo "Starting interactive container..."
 	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -it --rm \
 		--name $(CONTAINER_NAME)-interactive \
+		--env-file $(ENV_FILE) \
 		-v $(PWD)/logs:/app/logs \
-		-v $(PWD)/$(ENV_FILE):/app/.env:ro \
 		$(IMAGE_NAME):$(DOCKER_TAG) \
 		/bin/bash
 
@@ -38,13 +45,20 @@ run-backpack:
 		echo "Usage: make run-backpack TICKER=BTC SIZE=0.01 ITER=10 [TIMEOUT=5]"; \
 		exit 1; \
 	fi
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ Error: $(ENV_FILE) file not found!"; \
+		echo "💡 Please create .env file from env_example.txt:"; \
+		echo "   cp env_example.txt .env"; \
+		echo "   Then edit .env with your API keys"; \
+		exit 1; \
+	fi
 	@echo "🚀 Starting Backpack hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
 	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-backpack \
+		--env-file $(ENV_FILE) \
 		-v $(PWD)/logs:/app/logs \
-		-v $(PWD)/$(ENV_FILE):/app/.env:ro \
 		$(IMAGE_NAME):$(DOCKER_TAG) \
 		python hedge_mode.py \
 		--exchange backpack \
@@ -61,13 +75,20 @@ run-extended:
 		echo "Usage: make run-extended TICKER=ETH SIZE=0.1 ITER=5 [TIMEOUT=5]"; \
 		exit 1; \
 	fi
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ Error: $(ENV_FILE) file not found!"; \
+		echo "💡 Please create .env file from env_example.txt:"; \
+		echo "   cp env_example.txt .env"; \
+		echo "   Then edit .env with your API keys"; \
+		exit 1; \
+	fi
 	@echo "🚀 Starting Extended hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
 	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-extended \
+		--env-file $(ENV_FILE) \
 		-v $(PWD)/logs:/app/logs \
-		-v $(PWD)/$(ENV_FILE):/app/.env:ro \
 		$(IMAGE_NAME):$(DOCKER_TAG) \
 		python hedge_mode.py \
 		--exchange extended \
@@ -84,13 +105,20 @@ run:
 		echo "Usage: make run EXCHANGE=backpack TICKER=BTC SIZE=0.01 ITER=10 [TIMEOUT=5]"; \
 		exit 1; \
 	fi
+	@if [ ! -f "$(ENV_FILE)" ]; then \
+		echo "❌ Error: $(ENV_FILE) file not found!"; \
+		echo "💡 Please create .env file from env_example.txt:"; \
+		echo "   cp env_example.txt .env"; \
+		echo "   Then edit .env with your API keys"; \
+		exit 1; \
+	fi
 	@echo "🚀 Starting $(EXCHANGE) hedge mode..."
 	@echo "   Ticker: $(TICKER), Size: $(SIZE), Iterations: $(ITER)"
 	@mkdir -p $(PWD)/logs && chmod 777 $(PWD)/logs
 	docker run -d \
 		--name $(CONTAINER_NAME)-$(EXCHANGE) \
+		--env-file $(ENV_FILE) \
 		-v $(PWD)/logs:/app/logs \
-		-v $(PWD)/$(ENV_FILE):/app/.env:ro \
 		$(IMAGE_NAME):$(DOCKER_TAG) \
 		python hedge_mode.py \
 		--exchange $(EXCHANGE) \
