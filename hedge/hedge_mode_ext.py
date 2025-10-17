@@ -1034,11 +1034,17 @@ class HedgeBot:
 
         # Initialize clients
         try:
+            self.logger.info("Initializing Lighter client...")
             self.initialize_lighter_client()
+            
+            self.logger.info("Initializing Extended client...")
             self.initialize_extended_client()
 
+            self.logger.info("Getting Extended contract info...")
             # Get contract info
             self.extended_contract_id, self.extended_tick_size = await self.get_extended_contract_info()
+            
+            self.logger.info("Getting Lighter market config...")
             self.lighter_market_index, self.base_amount_multiplier, self.price_multiplier = self.get_lighter_market_config()
 
             self.logger.info(f"Contract info loaded - Extended: {self.extended_contract_id}, "
@@ -1046,6 +1052,7 @@ class HedgeBot:
 
         except Exception as e:
             self.logger.error(f"❌ Failed to initialize: {e}")
+            self.logger.error(f"❌ Full traceback: {traceback.format_exc()}")
             return
 
         # Setup Extended websocket
