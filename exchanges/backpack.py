@@ -333,12 +333,12 @@ class BackpackClient(BaseExchangeClient):
                 return OrderResult(success=False, error_message='Invalid bid/ask prices')
 
             if direction == 'buy':
-                # For buy orders, place slightly below best ask to ensure execution
-                order_price = best_ask - self.config.tick_size
+                # For buy orders, place slightly above best ask to ensure execution
+                order_price = best_ask + self.config.tick_size
                 side = 'Bid'
             else:
-                # For sell orders, place slightly above best bid to ensure execution
-                order_price = best_bid + self.config.tick_size
+                # For sell orders, place slightly below best bid to ensure execution
+                order_price = best_bid - self.config.tick_size
                 side = 'Ask'
 
             # Place the order using Backpack SDK (post-only to ensure maker order)
@@ -351,7 +351,7 @@ class BackpackClient(BaseExchangeClient):
                 post_only=True,
                 time_in_force=TimeInForceEnum.GTC
             )
-
+            print(f"[OPEN] Order result: {order_result}")
             if not order_result:
                 return OrderResult(success=False, error_message='Failed to place order')
 
